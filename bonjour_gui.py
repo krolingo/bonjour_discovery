@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import sys
-import socket
+import socket   
 
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QTreeWidget, QTreeWidgetItem, QHeaderView,
@@ -71,6 +71,7 @@ class ZeroconfThread(QThread):
     services_updated = pyqtSignal(dict)
 
     def run(self):
+        # Requires python-zeroconf ≥0.38
         zc = Zeroconf()
         listener = MDNSListener()
         listener.update.connect(self.emit_update)
@@ -104,6 +105,8 @@ class BonjourWindow(QMainWindow):
         self.tree.setAlternatingRowColors(True)
         self.setCentralWidget(self.tree)
 
+        # Add "File" menu with Quit
+        file_menu = self.menuBar().addMenu("File")
         # Add menu for theme switching
         menu = self.menuBar().addMenu("View")
         refresh_menu = self.menuBar().addMenu("Network")
@@ -127,6 +130,11 @@ class BonjourWindow(QMainWindow):
         refresh_action = refresh_menu.addAction("Refresh Network")
         refresh_action.triggered.connect(self.restart_discovery)
         refresh_action.setShortcuts([QKeySequence("Ctrl+R"), QKeySequence("Meta+R")])
+
+        quit_action = file_menu.addAction("Quit")
+        import platform
+        quit_action.setShortcut(QKeySequence("Ctrl+Q" if platform.system() != "Darwin" else "Meta+Q"))
+        quit_action.triggered.connect(QApplication.quit)
 
         self.set_theme("system")  # Default
 
@@ -267,6 +275,7 @@ class BonjourWindow(QMainWindow):
                 host_item = QTreeWidgetItem([f"Host: {info.server}"])
                 instance_item.addChild(host_item)
                 for addr in info.addresses:
+                    import socket
                     try:
                         if len(addr) == 4:
                             ip_str = socket.inet_ntoa(addr)
